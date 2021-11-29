@@ -1,4 +1,4 @@
-import React, { RefObject, useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Row, Col, Checkbox, Button, Input } from 'antd';
 import {
 	DeleteOutlined,
@@ -10,16 +10,13 @@ import {
 const TodoComponent = ({ todo, updateTodo, deleteTodo }) => {
 	const [ todoTitle, setTodoTitle ] = useState(null);
 	const [ showForm, setShowForm ] = useState(false);
-	const input: RefObject<Input> = useRef();
-	const toggleShowForm = () => {
-		setShowForm((oldState) => !oldState);
-		setTodoTitle(null);
-		setTimeout(() => input.current.focus(), 50);
-	};
+
+	const input = useRef(null);
 	const containerRef = useRef(null);
+
 	useEffect(
 		() => {
-			const handleClickOutside = (e) => {
+			const handleClickOutside = (e: any): void => {
 				if (
 					containerRef.current &&
 					!containerRef.current.contains(e.target) &&
@@ -35,7 +32,14 @@ const TodoComponent = ({ todo, updateTodo, deleteTodo }) => {
 		},
 		[ containerRef, showForm ],
 	);
-	const handleSubmit = (e) => {
+
+	const toggleShowForm = () => {
+		setShowForm((oldState) => !oldState);
+		setTodoTitle(null);
+		setTimeout(() => input.current.focus(), 50);
+	};
+
+	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 		updateTodo(todo._id, { title: todoTitle || todo.title });
 		toggleShowForm();

@@ -5,8 +5,6 @@ query UserTodosFind{
   UserTodosFind{
     title
     _id
-    createdById
     isDone
-    
   }
 }`

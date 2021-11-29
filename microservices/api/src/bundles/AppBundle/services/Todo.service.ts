@@ -37,39 +37,31 @@ export class TodoService {
 				context: { userId },
 			},
 		);
-		return result.ops[0];
+		return result.insertedId;
 	}
+
 	public async update (
 		input: UserTodosUpdateInput,
 		userId: ObjectId,
 	) {
 		const { todoId, ...data } = input;
-		const isOwner = await this.securityService.checkTodoOwner(
-			todoId,
-			userId,
+		await this.securityService.checkUserOwnsTodo(todoId, userId);
+		const result = await this.todosCollection.updateOne(
+			{ _id: todoId },
+			{ $set: data },
 		);
-		if (isOwner) {
-			const result = await this.todosCollection.updateOne(
-				{ _id: todoId },
-				{ $set: data },
-			);
-			return !!result.modifiedCount;
-		}
+		return !!result.modifiedCount;
 	}
+
 	public async delete (
 		input: UserTodosUpdateInput,
 		userId: ObjectId,
 	) {
 		const { todoId } = input;
-		const isOwner = await this.securityService.checkTodoOwner(
-			todoId,
-			userId,
-		);
-		if (isOwner) {
-			const result = await this.todosCollection.deleteOne({
-				_id: todoId,
-			});
-			return !!result.deletedCount;
-		}
+		await this.securityService.checkUserOwnsTodo(todoId, userId);
+		const result = await this.todosCollection.deleteOne({
+			_id: todoId,
+		});
+		return !!result.deletedCount;
 	}
 }

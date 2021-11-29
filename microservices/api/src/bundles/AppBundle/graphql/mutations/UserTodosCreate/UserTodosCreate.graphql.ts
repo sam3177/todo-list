@@ -1,5 +1,5 @@
 export default /* GraphQL */ `
   type Mutation {
-    UserTodosCreate(input: UserTodosCreateInput!): Todo!
+    UserTodosCreate(input: UserTodosCreateInput!): ObjectId!
   }
 `;

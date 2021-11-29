@@ -108,7 +108,7 @@ export type Mutation = {
   UsersUpdateOne: User;
   UsersDeleteOne?: Maybe<Scalars['Boolean']>;
   RegisterUser?: Maybe<Scalars['Boolean']>;
-  UserTodosCreate: Todo;
+  UserTodosCreate: Scalars['ObjectId'];
   UserTodosDelete: Scalars['Boolean'];
   UserTodosUpdate: Scalars['Boolean'];
   register: RegistrationResponse;

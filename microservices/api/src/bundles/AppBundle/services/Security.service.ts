@@ -14,14 +14,16 @@ export class SecurityService {
 		this.todosCollection = container.get(TodosCollection);
 	}
 
-	public async checkTodoOwner (
+	public async checkUserOwnsTodo (
 		todoId: ObjectId,
 		userId: ObjectId,
-	): Promise<boolean> {
+	) {
 		const result = await this.todosCollection.findOne({
 			_id: todoId,
-			createdById: userId,
 		});
-		return !!result;
+		if (result.createdById.toString() !== userId.toString())
+			throw new Error(
+				"Dang it! This todo is not yours.",
+			);
 	}
 }

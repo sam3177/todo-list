@@ -1,5 +1,5 @@
 import { useUIComponents, useTranslate } from '@bluelibs/x-ui';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, LegacyRef } from 'react';
 import { PlusOutlined } from '@ant-design/icons';
 import * as Ant from 'antd';
 import {
@@ -20,92 +20,108 @@ import { USER_TODOS_DELETE } from '@bundles/UIAppBundle/mutations/DeleteTodo.mut
 import { USER_TODOS_FIND } from '@bundles/UIAppBundle/queries/getUserTodos.query';
 import './styles.scss';
 import TodoComponent from './TodoComponent';
+
 export const MyTodos = () => {
 	const t = useTranslate();
 	const UIComponents = useUIComponents();
-	const [ todos, setTodos ] = useState<Todo[]>();
-	const [ todoTitle, setTodoTitle ] = useState<string>();
-	const [ UserTodosCreate ] = useMutation(USER_TODOS_CREATE);
-	const [ UserTodosUpdate ] = useMutation(USER_TODOS_UPDATE);
-	const [ UserTodosDelete ] = useMutation(USER_TODOS_DELETE);
-	const { loading: isLoading, data } = useQuery(USER_TODOS_FIND, {
+
+	const [ todos, setTodos ] = useState([]);
+
+	const [ createUserTodo ] = useMutation(USER_TODOS_CREATE);
+	const [ updateUserTodo ] = useMutation(USER_TODOS_UPDATE);
+	const [ deleteUserTodo ] = useMutation(USER_TODOS_DELETE);
+
+	const { loading, data } = useQuery(USER_TODOS_FIND, {
 		fetchPolicy: 'network-only',
 	});
 
 	useEffect(
 		() => {
-			if (isLoading) return;
+			if (loading) return;
 			setTodos(data.UserTodosFind as Todo[]);
 		},
-		[ isLoading ],
+		[ loading ],
 	);
 
-	const addNewTodo = async () => {
-		const input: UserTodosCreateInput = { title: todoTitle };
-		const freshTodo = await UserTodosCreate({
+	const addNewTodo = async (e: any) => {
+		e.preventDefault();
+		const input: UserTodosCreateInput = { title: e.target[0].value };
+
+		const response = await createUserTodo({
 			variables: { input },
 		});
-		console.log(freshTodo);
 		setTodos((oldTodos) => [
 			...oldTodos,
-			freshTodo.data.UserTodosCreate,
+			{ ...input, isDone: false, _id: response.data.UserTodosCreate },
 		]);
-		setTodoTitle('');
+		[ ...e.target ][0].value = '';
+
+		console.log([ ...e.target ]);
 	};
 
-	const updateTodo = async (id, data) => {
+	const updateTodo = async (
+		id: string,
+		data: { title: string; isDone: boolean },
+	) => {
 		const input: UserTodosUpdateInput = {
 			todoId: id,
 			...data,
 		};
-		await UserTodosUpdate({
+		await updateUserTodo({
 			variables: { input },
 		});
-		setTodos((oldTodos) =>
-			oldTodos.map(
-				(todo) => (todo._id === id ? { ...todo, ...data } : todo),
-			),
-		);
+		setTodos((oldTodos) => {
+			const idx = oldTodos.findIndex((todo) => todo._id === id);
+			const copy = [ ...oldTodos ];
+			copy[idx] = { ...copy[idx], ...data };
+			return copy;
+		});
 	};
 
-	const deleteTodo = async (id) => {
+	const deleteTodo = async (id: string) => {
 		const input: UserTodosDeleteInput = {
 			todoId: id,
 		};
-		await UserTodosDelete({ variables: { input } });
-		setTodos((oldTodos) =>
-			oldTodos.filter((todo) => todo._id !== id),
-		);
+		await deleteUserTodo({ variables: { input } });
+		setTodos((oldTodos) => {
+			const idx = oldTodos.findIndex((todo) => todo._id === id);
+			const copy = [ ...oldTodos ];
+			copy.splice(idx, 1);
+			return copy;
+		});
 	};
-	const onDragEndHandler = (result) => {
+
+	const onDragEndHandler = (result: any) => {
 		if (!result.destination) return;
 		const items: Todo[] = [ ...todos ];
 		const [ reorderedItem ] = items.splice(result.source.index, 1);
 		items.splice(result.destination.index, 0, reorderedItem);
 		setTodos(items);
 	};
+
 	return (
 		<UIComponents.AdminLayout>
 			<Ant.PageHeader title='MyTodos'>
-				<Ant.Row>
-					<Ant.Col span={12}>
-						<Ant.Input
-							value={todoTitle}
-							size='large'
-							onChange={(e) => setTodoTitle(e.target.value)}
-							placeholder='Add a new todo title'
-						/>
-					</Ant.Col>
-					<Ant.Col span={6}>
-						<Ant.Button
-							className='new-todo-btn'
-							key='1'
-							onClick={addNewTodo}
-							icon={<PlusOutlined />}>
-							{t('management.todos.list.create_btn')}
-						</Ant.Button>
-					</Ant.Col>
-				</Ant.Row>
+				<form onSubmit={addNewTodo}>
+					<Ant.Row>
+						<Ant.Col span={12}>
+							<Ant.Input
+								required
+								size='large'
+								placeholder='Add a new todo title'
+							/>
+						</Ant.Col>
+						<Ant.Col span={6}>
+							<Ant.Button
+								htmlType='submit'
+								className='new-todo-btn'
+								key='1'
+								icon={<PlusOutlined />}>
+								{t('management.todos.list.create_btn')}
+							</Ant.Button>
+						</Ant.Col>
+					</Ant.Row>
+				</form>
 			</Ant.PageHeader>
 			<Ant.Layout.Content>
 				<DragDropContext onDragEnd={onDragEndHandler}>
