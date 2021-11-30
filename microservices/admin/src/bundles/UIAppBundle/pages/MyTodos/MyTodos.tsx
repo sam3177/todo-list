@@ -27,6 +27,8 @@ export const MyTodos = () => {
 
 	const [ todos, setTodos ] = useState([]);
 
+	const [ form ] = Ant.Form.useForm();
+
 	const [ createUserTodo ] = useMutation(USER_TODOS_CREATE);
 	const [ updateUserTodo ] = useMutation(USER_TODOS_UPDATE);
 	const [ deleteUserTodo ] = useMutation(USER_TODOS_DELETE);
@@ -43,9 +45,11 @@ export const MyTodos = () => {
 		[ loading ],
 	);
 
-	const addNewTodo = async (e: any) => {
-		e.preventDefault();
-		const input: UserTodosCreateInput = { title: e.target[0].value };
+	const addNewTodo = async (values: any) => {
+		const input: UserTodosCreateInput = { title: values.todoTitle };
+
+		console.log(values);
+		form.resetFields();
 
 		const response = await createUserTodo({
 			variables: { input },
@@ -54,9 +58,6 @@ export const MyTodos = () => {
 			...oldTodos,
 			{ ...input, isDone: false, _id: response.data.UserTodosCreate },
 		]);
-		[ ...e.target ][0].value = '';
-
-		console.log([ ...e.target ]);
 	};
 
 	const updateTodo = async (
@@ -102,26 +103,37 @@ export const MyTodos = () => {
 	return (
 		<UIComponents.AdminLayout>
 			<Ant.PageHeader title='MyTodos'>
-				<form onSubmit={addNewTodo}>
+				<Ant.Form
+					form={form}
+					name='control-hooks'
+					onFinish={addNewTodo}>
 					<Ant.Row>
 						<Ant.Col span={12}>
-							<Ant.Input
-								required
-								size='large'
-								placeholder='Add a new todo title'
-							/>
+							<Ant.Form.Item name='todoTitle'>
+								<Ant.Input
+									onChange={(e) =>
+										form.setFieldsValue({
+											todoTitle: e.target.value,
+										})}
+									required
+									size='large'
+									placeholder='Add a new todo title'
+								/>{' '}
+							</Ant.Form.Item>
 						</Ant.Col>
 						<Ant.Col span={6}>
-							<Ant.Button
-								htmlType='submit'
-								className='new-todo-btn'
-								key='1'
-								icon={<PlusOutlined />}>
-								{t('management.todos.list.create_btn')}
-							</Ant.Button>
+							<Ant.Form.Item name='submit'>
+								<Ant.Button
+									htmlType='submit'
+									className='new-todo-btn'
+									key='1'
+									icon={<PlusOutlined />}>
+									{t('management.todos.list.create_btn')}
+								</Ant.Button>
+							</Ant.Form.Item>
 						</Ant.Col>
 					</Ant.Row>
-				</form>
+				</Ant.Form>
 			</Ant.PageHeader>
 			<Ant.Layout.Content>
 				<DragDropContext onDragEnd={onDragEndHandler}>
